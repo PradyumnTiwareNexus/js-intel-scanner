@@ -1,0 +1,35 @@
+"""Version control, CI/CD, container, and orchestration secret patterns."""
+import re
+from .severity import SEVERITY_CRITICAL, SEVERITY_HIGH, SEVERITY_MEDIUM, SEVERITY_LOW
+
+PATTERNS = {
+    "GitHub Personal Access Token": (re.compile(r"gh[pousr]_[A-Za-z0-9]{36,255}"), SEVERITY_CRITICAL),
+    "GitHub Fine-Grained PAT": (re.compile(r"github_pat_[A-Za-z0-9_]{22,255}"), SEVERITY_CRITICAL),
+    "GitHub App Installation Token": (re.compile(r"ghs_[A-Za-z0-9]{36}"), SEVERITY_HIGH),
+    "GitHub OAuth Token": (re.compile(r"gho_[A-Za-z0-9]{36}"), SEVERITY_HIGH),
+    "GitLab Personal Access Token": (re.compile(r"glpat-[A-Za-z0-9\-_]{20}"), SEVERITY_HIGH),
+    "GitLab Pipeline Trigger Token": (re.compile(r"glptt-[A-Za-z0-9]{40}"), SEVERITY_MEDIUM),
+    "GitLab Runner Registration Token": (re.compile(r"GR1348941[A-Za-z0-9\-_]{20}"), SEVERITY_HIGH),
+    "Bitbucket App Password": (re.compile(r"(?i)bitbucket.{0,20}['\"][A-Za-z0-9]{20,32}['\"]"), SEVERITY_HIGH),
+    "CircleCI Token": (re.compile(r"(?i)circleci.{0,20}['\"][a-f0-9]{40}['\"]"), SEVERITY_HIGH),
+    "Travis CI Token": (re.compile(r"(?i)travis.{0,20}token['\"]\s*[:=]\s*['\"][A-Za-z0-9]{22}['\"]"), SEVERITY_HIGH),
+    "Jenkins API Token": (re.compile(r"(?i)jenkins.{0,20}token['\"]\s*[:=]\s*['\"][A-Za-z0-9]{34}['\"]"), SEVERITY_HIGH),
+    "Docker Hub Access Token": (re.compile(r"dckr_pat_[A-Za-z0-9_\-]{27}"), SEVERITY_HIGH),
+    "Docker Registry Auth (config.json)": (re.compile(r'"auths"\s*:\s*\{[\s\S]{0,200}"auth"\s*:\s*"[A-Za-z0-9+/=]{10,}"'), SEVERITY_HIGH),
+    "Kubernetes Kubeconfig Token": (re.compile(r"(?i)kubeconfig[\s\S]{0,200}token:\s*[A-Za-z0-9\-_.]{20,}"), SEVERITY_CRITICAL),
+    "Kubernetes Bootstrap Token": (re.compile(r"\b[a-z0-9]{6}\.[a-z0-9]{16}\b"), SEVERITY_HIGH),
+    "Ansible Vault Password Reference": (re.compile(r"(?i)ansible.?vault.{0,20}password['\"]\s*[:=]\s*['\"][^'\"]{4,}['\"]"), SEVERITY_HIGH),
+    "Terraform Cloud API Token": (re.compile(r"(?i)terraform.{0,20}token['\"]\s*[:=]\s*['\"][A-Za-z0-9\-_.]{14,}\.atlasv1\.[A-Za-z0-9\-_]{60,}['\"]"), SEVERITY_CRITICAL),
+    "Datadog API Key": (re.compile(r"(?i)datadog.{0,20}(api_?key)['\"]\s*[:=]\s*['\"][a-f0-9]{32}['\"]"), SEVERITY_HIGH),
+    "Datadog App Key": (re.compile(r"(?i)datadog.{0,20}(app_?key)['\"]\s*[:=]\s*['\"][a-f0-9]{40}['\"]"), SEVERITY_HIGH),
+    "New Relic License Key": (re.compile(r"(?i)new.?relic.{0,20}['\"][a-f0-9]{40}['\"]"), SEVERITY_HIGH),
+    "New Relic API Key": (re.compile(r"NRAK-[A-Z0-9]{27}"), SEVERITY_HIGH),
+    "Sentry Auth Token": (re.compile(r"(?i)sentry.{0,20}token['\"]\s*[:=]\s*['\"][A-Za-z0-9]{64}['\"]"), SEVERITY_HIGH),
+    "Sentry DSN": (re.compile(r"https://[a-f0-9]{32}@[a-z0-9.\-]+/[0-9]+"), SEVERITY_MEDIUM),
+    "PagerDuty API Key": (re.compile(r"(?i)pagerduty.{0,20}['\"][A-Za-z0-9+_\-]{20}['\"]"), SEVERITY_HIGH),
+    "Grafana API Key": (re.compile(r"eyJrIjoi[A-Za-z0-9]{40,}"), SEVERITY_HIGH),
+    "npm Registry Token (.npmrc)": (re.compile(r"//registry\.npmjs\.org/:_authToken=[A-Za-z0-9\-_]{36,}"), SEVERITY_HIGH),
+    "Feature Flag Service Key (LaunchDarkly)": (re.compile(r"(?i)launchdarkly.{0,20}['\"](sdk-)?[a-f0-9\-]{36}['\"]"), SEVERITY_MEDIUM),
+    "Feature Flag Service Key (Split.io)": (re.compile(r"(?i)split(\.io)?.{0,20}['\"][a-z0-9]{32,}['\"]"), SEVERITY_MEDIUM),
+    "Source Map Reference Comment": (re.compile(r"//#\s*sourceMappingURL=([^\s]+\.map)"), SEVERITY_LOW),
+}

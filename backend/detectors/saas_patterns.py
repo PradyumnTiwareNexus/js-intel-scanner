@@ -1,0 +1,37 @@
+"""SaaS/CMS/search/headless-platform keys — frequently shipped client-side by mistake."""
+import re
+from .severity import SEVERITY_CRITICAL, SEVERITY_HIGH, SEVERITY_MEDIUM, SEVERITY_LOW
+
+PATTERNS = {
+    "Algolia Admin API Key": (re.compile(r"(?i)algolia.{0,20}admin.{0,20}['\"][a-f0-9]{32}['\"]"), SEVERITY_CRITICAL),
+    "Algolia Search-Only API Key": (re.compile(r"(?i)algolia.{0,20}['\"][a-f0-9]{32}['\"]"), SEVERITY_LOW),
+    "Contentful Management API Token": (re.compile(r"CFPAT-[A-Za-z0-9_\-]{43}"), SEVERITY_CRITICAL),
+    "Contentful Delivery API Token": (re.compile(r"(?i)contentful.{0,20}(access_?token)['\"]\s*[:=]\s*['\"][A-Za-z0-9_\-]{32,}['\"]"), SEVERITY_MEDIUM),
+    "Shopify Access Token": (re.compile(r"shpat_[a-fA-F0-9]{32}"), SEVERITY_CRITICAL),
+    "Shopify Custom App Token": (re.compile(r"shpca_[a-fA-F0-9]{32}"), SEVERITY_CRITICAL),
+    "Shopify Storefront Token": (re.compile(r"shpss_[a-fA-F0-9]{32}"), SEVERITY_MEDIUM),
+    "WooCommerce API Key": (re.compile(r"ck_[a-f0-9]{40}"), SEVERITY_HIGH),
+    "WooCommerce API Secret": (re.compile(r"cs_[a-f0-9]{40}"), SEVERITY_CRITICAL),
+    "WordPress Secret Key/Salt (wp-config)": (re.compile(r"(?i)define\(\s*['\"](AUTH|SECURE_AUTH|LOGGED_IN|NONCE)_(KEY|SALT)['\"]\s*,\s*['\"][^'\"]{20,}['\"]"), SEVERITY_HIGH),
+    "Wix API Key": (re.compile(r"(?i)wix.{0,20}apikey['\"]\s*[:=]\s*['\"][A-Za-z0-9_\-\.]{20,}['\"]"), SEVERITY_MEDIUM),
+    "Squarespace API Key": (re.compile(r"(?i)squarespace.{0,20}['\"][a-f0-9\-]{36}['\"]"), SEVERITY_MEDIUM),
+    "Airtable API Key": (re.compile(r"\bpat[A-Za-z0-9]{14}\.[a-f0-9]{64}\b"), SEVERITY_HIGH),
+    "Airtable Legacy API Key": (re.compile(r"\bkey[A-Za-z0-9]{14}\b"), SEVERITY_MEDIUM),
+    "Notion Integration Token": (re.compile(r"secret_[A-Za-z0-9]{43}"), SEVERITY_HIGH),
+    "Notion OAuth Token": (re.compile(r"ntn_[A-Za-z0-9]{40,}"), SEVERITY_HIGH),
+    "Trello API Key/Token": (re.compile(r"(?i)trello.{0,20}(key|token)['\"]\s*[:=]\s*['\"][a-f0-9]{32,64}['\"]"), SEVERITY_MEDIUM),
+    "Asana Personal Access Token": (re.compile(r"\b\d/\d{16,20}:[A-Za-z0-9]{32}\b"), SEVERITY_HIGH),
+    "Typeform API Key": (re.compile(r"(?i)typeform.{0,20}['\"][A-Za-z0-9_\-]{40,}['\"]"), SEVERITY_MEDIUM),
+    "HubSpot API Key": (re.compile(r"(?i)hubspot.{0,20}['\"][0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}['\"]"), SEVERITY_HIGH),
+    "Salesforce Session ID / Token": (re.compile(r"(?i)salesforce.{0,20}(session_?id|token)['\"]\s*[:=]\s*['\"][A-Za-z0-9!._\-]{20,}['\"]"), SEVERITY_HIGH),
+    "Zapier Webhook URL": (re.compile(r"https://hooks\.zapier\.com/hooks/catch/[0-9]+/[A-Za-z0-9]+"), SEVERITY_LOW),
+    "Firebase App Check Debug Token": (re.compile(r"(?i)FIREBASE_APPCHECK_DEBUG_TOKEN['\"]?\s*[:=]\s*['\"][0-9a-f\-]{36}['\"]"), SEVERITY_MEDIUM),
+    "Google Maps API Key (unrestricted use hint)": (re.compile(r"AIzaSy[0-9A-Za-z\-_]{33}(?=.{0,60}maps)"), SEVERITY_MEDIUM),
+    "Recaptcha Secret Key": (re.compile(r"(?i)recaptcha.{0,20}secret['\"]\s*[:=]\s*['\"]6[0-9A-Za-z_\-]{39}['\"]"), SEVERITY_HIGH),
+    "Cloudinary URL with Credentials": (re.compile(r"cloudinary://[0-9]+:[A-Za-z0-9_\-]+@[a-z0-9\-]+"), SEVERITY_CRITICAL),
+    "Imgix Signing Token": (re.compile(r"(?i)imgix.{0,20}(token|key)['\"]\s*[:=]\s*['\"][A-Za-z0-9_\-]{20,}['\"]"), SEVERITY_MEDIUM),
+    "Klaviyo API Key": (re.compile(r"pk_[a-f0-9]{34}"), SEVERITY_HIGH),
+    "Braze API Key": (re.compile(r"(?i)braze.{0,20}['\"][0-9a-f\-]{36}['\"]"), SEVERITY_HIGH),
+    "Segment Public Write Key": (re.compile(r"(?i)segment.{0,20}(write_?key)['\"]\s*[:=]\s*['\"][A-Za-z0-9]{20,32}['\"]"), SEVERITY_LOW),
+    "Optimizely SDK Key": (re.compile(r"(?i)optimizely.{0,20}['\"][A-Za-z0-9]{20,}['\"]"), SEVERITY_LOW),
+}

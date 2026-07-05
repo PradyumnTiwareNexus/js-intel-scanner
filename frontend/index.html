@@ -1,0 +1,386 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>JS Intelligence Platform</title>
+<style>
+  :root {
+    --bg:#0d1117; --panel:#161b22; --border:#30363d; --text:#c9d1d9;
+    --accent:#58a6ff; --crit:#f85149; --high:#ff9f40; --med:#e3b341;
+    --low:#3fb950; --info:#8b949e;
+  }
+  * { box-sizing:border-box; }
+  body { background:var(--bg); color:var(--text); font-family:'Segoe UI',Arial,sans-serif;
+         margin:0; padding:24px; }
+  h1 { color:var(--accent); font-size:20px; margin-bottom:4px; }
+  .sub { color:var(--info); font-size:13px; margin-bottom:20px; }
+  .row { display:flex; gap:12px; margin-bottom:20px; flex-wrap:wrap; }
+  input[type=text] { background:var(--panel); border:1px solid var(--border); color:var(--text);
+       padding:10px 14px; border-radius:6px; flex:1; min-width:240px; font-size:14px; }
+  button { background:var(--accent); color:#0d1117; border:none; padding:10px 18px;
+       border-radius:6px; font-weight:600; cursor:pointer; }
+  button:hover { opacity:0.85; }
+  button.secondary { background:transparent; border:1px solid var(--border); color:var(--text); }
+  .panel { background:var(--panel); border:1px solid var(--border); border-radius:8px;
+       padding:16px 20px; margin-bottom:20px; }
+  .progress-bar-bg { background:#21262d; border-radius:6px; height:10px; overflow:hidden; }
+  .progress-bar-fill { background:var(--accent); height:100%; width:0%; transition:width .3s; }
+  #logConsole { background:#010409; border-radius:6px; padding:12px; height:220px; overflow-y:auto;
+       font-family:'Consolas',monospace; font-size:12.5px; color:#8b949e; }
+  #logConsole div { white-space:pre-wrap; }
+  .stats { display:flex; gap:14px; flex-wrap:wrap; margin:16px 0; }
+  .card { background:#0d1117; border:1px solid var(--border); padding:14px 18px; border-radius:8px;
+       min-width:110px; text-align:center; }
+  .card .num { font-size:24px; font-weight:bold; color:var(--accent); }
+  .card .label { font-size:12px; color:var(--info); }
+  table { width:100%; border-collapse:collapse; font-size:13px; }
+  th, td { padding:8px 10px; border-bottom:1px solid var(--border); text-align:left; }
+  th { color:var(--accent); position:sticky; top:0; background:var(--panel); }
+  .sev-Critical { color:var(--crit); font-weight:bold; }
+  .sev-High { color:var(--high); font-weight:bold; }
+  .sev-Medium { color:var(--med); }
+  .sev-Low { color:var(--low); }
+  .sev-Informational { color:var(--info); }
+  .export-links a { color:var(--accent); margin-right:16px; text-decoration:none; font-size:13px; }
+  .status-badge { padding:2px 10px; border-radius:12px; font-size:12px; font-weight:600; }
+  .status-running { background:#1f3a5f; color:#58a6ff; }
+  .status-done { background:#1a3d2e; color:#3fb950; }
+  .status-error { background:#4a1f24; color:#f85149; }
+  .tabs { display:flex; gap:4px; margin-bottom:16px; }
+  .tab-btn { background:transparent; border:1px solid var(--border); color:var(--info);
+       padding:8px 16px; border-radius:6px 6px 0 0; font-weight:600; cursor:pointer; }
+  .tab-btn.active { background:var(--panel); color:var(--accent); border-bottom-color:var(--panel); }
+  .tab-view { display:none; }
+  .tab-view.active { display:block; }
+  #stageList { display:flex; flex-direction:column; gap:6px; }
+  .stage-row { display:flex; align-items:center; gap:10px; background:#0d1117;
+       border:1px solid var(--border); border-radius:6px; padding:8px 12px; cursor:grab; }
+  .stage-row.dragging { opacity:0.4; }
+  .stage-row .handle { color:var(--info); font-size:14px; }
+  .stage-row .stage-name { flex:1; font-family:'Consolas',monospace; font-size:13px; }
+  .stage-row.disabled .stage-name { color:var(--info); text-decoration:line-through; }
+  .stage-row.plugin-badge::after { content:"plugin"; font-size:10px; color:var(--accent);
+       border:1px solid var(--accent); border-radius:4px; padding:1px 5px; margin-left:6px; }
+  select { background:var(--panel); border:1px solid var(--border); color:var(--text);
+       padding:8px 12px; border-radius:6px; font-size:14px; }
+</style>
+</head>
+<body>
+
+<h1>⚡ JS Intelligence & Sensitive Information Mining Platform</h1>
+<div class="sub">Recon → JS discovery → secret/PII detection → AI triage</div>
+
+<div class="tabs">
+  <button class="tab-btn active" id="tabBtnScan" onclick="showTab('scan')">Scan</button>
+  <button class="tab-btn" id="tabBtnPipeline" onclick="showTab('pipeline')">Pipeline</button>
+</div>
+
+<div class="tab-view active" id="viewScan">
+
+<div class="row">
+  <input type="text" id="domainInput" placeholder="example.com">
+  <button onclick="startScan()">Start Scan</button>
+  <button class="secondary" onclick="cancelScan()">Cancel</button>
+  <button class="secondary" onclick="checkTools()">Detect Tools</button>
+</div>
+
+<div class="panel" id="progressPanel" style="display:none">
+  <div style="display:flex; justify-content:space-between; margin-bottom:8px;">
+    <span id="stageLabel">Idle</span>
+    <span id="statusBadge" class="status-badge status-running">running</span>
+  </div>
+  <div class="progress-bar-bg"><div class="progress-bar-fill" id="progressFill"></div></div>
+</div>
+
+<div class="panel">
+  <div style="margin-bottom:8px; color:var(--info); font-size:13px;">Live Logs</div>
+  <div id="logConsole"></div>
+</div>
+
+<div class="stats" id="statsRow"></div>
+
+<div class="panel export-links" id="exportLinks" style="display:none">
+  <a id="linkHtml" target="_blank">📄 HTML Report</a>
+  <a id="linkJson" target="_blank">🗂 JSON</a>
+  <a id="linkCsv" target="_blank">📊 CSV</a>
+</div>
+
+<div class="panel">
+  <table>
+    <thead><tr><th>Type</th><th>Severity</th><th>Detector</th><th>Confidence</th>
+      <th>Match</th><th>Source</th></tr></thead>
+    <tbody id="findingsBody"></tbody>
+  </table>
+</div>
+
+</div>
+
+<div class="tab-view" id="viewPipeline">
+
+<div class="row">
+  <select id="profileSelect" onchange="applyProfile()"></select>
+  <button class="secondary" onclick="saveAsProfile()">Save As...</button>
+  <button class="secondary" onclick="duplicateProfile()">Duplicate</button>
+  <button class="secondary" onclick="exportProfile()">Export</button>
+  <button class="secondary" onclick="document.getElementById('importFile').click()">Import</button>
+  <input type="file" id="importFile" accept="application/json" style="display:none" onchange="importProfile(event)">
+  <button onclick="savePipeline()">Save Pipeline</button>
+</div>
+<div class="sub">Drag rows to reorder. Toggle the checkbox to enable/disable a stage. Changes are written straight to configs/config.yaml — no manual editing needed.</div>
+
+<div class="panel">
+  <div id="stageList"></div>
+</div>
+
+</div>
+
+<script>
+const API = "http://localhost:8787";
+let currentScanId = null;
+let ws = null;
+
+function log(msg) {
+  const el = document.getElementById('logConsole');
+  const line = document.createElement('div');
+  line.textContent = msg;
+  el.appendChild(line);
+  el.scrollTop = el.scrollHeight;
+}
+
+async function checkTools() {
+  log("[*] Checking installed tools...");
+  const res = await fetch(`${API}/api/tools`);
+  const data = await res.json();
+  for (const [tool, path] of Object.entries(data.tools)) {
+    log(path ? `[✓] ${tool}: ${path}` : `[✗] ${tool}: NOT FOUND`);
+  }
+}
+
+async function startScan() {
+  const domain = document.getElementById('domainInput').value.trim();
+  if (!domain) return alert("Enter a domain first");
+
+  document.getElementById('progressPanel').style.display = 'block';
+  document.getElementById('exportLinks').style.display = 'none';
+  document.getElementById('findingsBody').innerHTML = '';
+  document.getElementById('statsRow').innerHTML = '';
+  document.getElementById('logConsole').innerHTML = '';
+  setBadge('running');
+
+  const res = await fetch(`${API}/api/scan`, {
+    method: 'POST', headers: {'Content-Type':'application/json'},
+    body: JSON.stringify({domain})
+  });
+  const data = await res.json();
+  currentScanId = data.scan_id;
+  log(`[*] Scan started: ${currentScanId}`);
+  connectWs(currentScanId);
+}
+
+async function cancelScan() {
+  if (!currentScanId) return;
+  await fetch(`${API}/api/scan/${currentScanId}/cancel`, {method:'POST'});
+  log("[!] Cancel requested");
+}
+
+function connectWs(scanId) {
+  if (ws) ws.close();
+  ws = new WebSocket(`ws://localhost:8787/ws/${scanId}`);
+  ws.onmessage = (evt) => {
+    const e = JSON.parse(evt.data);
+    if (e.pct >= 0) {
+      document.getElementById('progressFill').style.width = e.pct + '%';
+      document.getElementById('stageLabel').textContent = `${e.stage} — ${e.message}`;
+    }
+    log(`[${e.stage}] ${e.message}`);
+    if (e.stage === 'done') { setBadge('done'); fetchReport(scanId); }
+    if (e.stage === 'error') { setBadge('error'); }
+    if (e.stage === 'cancelled') { setBadge('error'); }
+  };
+}
+
+function setBadge(status) {
+  const b = document.getElementById('statusBadge');
+  b.className = `status-badge status-${status}`;
+  b.textContent = status;
+}
+
+async function fetchReport(scanId) {
+  const res = await fetch(`${API}/api/scan/${scanId}`);
+  const data = await res.json();
+  if (!data.summary) return;
+  renderStats(data.summary);
+  renderFindings(data.summary.findings);
+  document.getElementById('exportLinks').style.display = 'block';
+  document.getElementById('linkHtml').href = `${API}/api/report/${scanId}/html`;
+  document.getElementById('linkJson').href = `${API}/api/report/${scanId}/json`;
+  document.getElementById('linkCsv').href = `${API}/api/report/${scanId}/csv`;
+}
+
+function renderStats(summary) {
+  const stats = [
+    ['Subdomains', summary.subdomains], ['Live Hosts', summary.live_hosts],
+    ['JS Files', summary.js_files], ['Downloaded', summary.downloaded],
+    ['Findings', summary.findings.length],
+  ];
+  document.getElementById('statsRow').innerHTML = stats.map(([label, num]) =>
+    `<div class="card"><div class="num">${num}</div><div class="label">${label}</div></div>`
+  ).join('');
+}
+
+function renderFindings(findings) {
+  document.getElementById('findingsBody').innerHTML = findings.map(f => `
+    <tr>
+      <td>${f.type || ''}</td>
+      <td class="sev-${f.ai_severity || f.severity || 'Informational'}">${f.ai_severity || f.severity || ''}</td>
+      <td>${f.detector || ''}</td>
+      <td>${f.confidence ?? '-'}</td>
+      <td><code>${f.match || ''}</code></td>
+      <td style="max-width:280px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${f.source || ''}</td>
+    </tr>`).join('');
+}
+
+// ---------------- Pipeline editor ----------------
+let pipelineState = { pipeline: [], stages: {}, profiles: {}, active_profile: 'balanced', available_stages: [] };
+
+function showTab(tab) {
+  const isScan = tab === 'scan';
+  document.getElementById('viewScan').classList.toggle('active', isScan);
+  document.getElementById('viewPipeline').classList.toggle('active', !isScan);
+  document.getElementById('tabBtnScan').classList.toggle('active', isScan);
+  document.getElementById('tabBtnPipeline').classList.toggle('active', !isScan);
+  if (!isScan) loadPipeline();
+}
+
+async function loadPipeline() {
+  const res = await fetch(`${API}/api/pipeline`);
+  pipelineState = await res.json();
+  renderProfileSelect();
+  renderStageList();
+}
+
+function renderProfileSelect() {
+  const sel = document.getElementById('profileSelect');
+  sel.innerHTML = Object.keys(pipelineState.profiles).map(name =>
+    `<option value="${name}" ${name === pipelineState.active_profile ? 'selected' : ''}>${name}</option>`
+  ).join('');
+}
+
+function renderStageList() {
+  const effective = new Set(pipelineState.effective_pipeline || []);
+  const list = document.getElementById('stageList');
+  list.innerHTML = pipelineState.pipeline.map((name, i) => {
+    const enabled = effective.has(name);
+    const isPlugin = !['subfinder','assetfinder','amass','deduplicate','httpx','katana','hakrawler',
+      'gospider','gau','waybackurls','robots','sitemap','jsfinder','verify_js','download_js','regex',
+      'entropy','endpoints','comments','trufflehog','nuclei','gemini','report'].includes(name);
+    return `<div class="stage-row ${enabled ? '' : 'disabled'} ${isPlugin ? 'plugin-badge' : ''}"
+                 draggable="true" data-index="${i}"
+                 ondragstart="onDragStart(event)" ondragover="onDragOver(event)" ondrop="onDrop(event)" ondragend="onDragEnd(event)">
+      <span class="handle">⠿</span>
+      <input type="checkbox" ${enabled ? 'checked' : ''} onchange="toggleStage('${name}', this.checked)">
+      <span class="stage-name">${i + 1}. ${name}</span>
+    </div>`;
+  }).join('');
+}
+
+let dragIndex = null;
+function onDragStart(e) {
+  dragIndex = Number(e.currentTarget.dataset.index);
+  e.currentTarget.classList.add('dragging');
+}
+function onDragOver(e) { e.preventDefault(); }
+function onDragEnd(e) { e.currentTarget.classList.remove('dragging'); }
+function onDrop(e) {
+  e.preventDefault();
+  const dropIndex = Number(e.currentTarget.dataset.index);
+  if (dragIndex === null || dragIndex === dropIndex) return;
+  const arr = pipelineState.pipeline;
+  const [moved] = arr.splice(dragIndex, 1);
+  arr.splice(dropIndex, 0, moved);
+  dragIndex = null;
+  renderStageList();
+}
+
+function toggleStage(name, isEnabled) {
+  pipelineState.stages[name] = { ...(pipelineState.stages[name] || {}), enabled: isEnabled };
+  const effective = new Set(pipelineState.pipeline.filter(n =>
+    !(pipelineState.profiles[pipelineState.active_profile]?.disable || []).includes(n) &&
+    (pipelineState.stages[n]?.enabled ?? true)
+  ));
+  pipelineState.effective_pipeline = [...effective];
+  renderStageList();
+}
+
+async function savePipeline() {
+  const res = await fetch(`${API}/api/pipeline`, {
+    method: 'POST', headers: {'Content-Type': 'application/json'},
+    body: JSON.stringify({ pipeline: pipelineState.pipeline, stages: pipelineState.stages })
+  });
+  const data = await res.json();
+  pipelineState.effective_pipeline = data.effective_pipeline;
+  renderStageList();
+  alert('Pipeline saved to configs/config.yaml');
+}
+
+async function applyProfile() {
+  const name = document.getElementById('profileSelect').value;
+  await fetch(`${API}/api/pipeline`, {
+    method: 'POST', headers: {'Content-Type': 'application/json'},
+    body: JSON.stringify({ active_profile: name })
+  });
+  await loadPipeline();
+}
+
+async function saveAsProfile() {
+  const name = prompt('Profile name:');
+  if (!name) return;
+  const disable = pipelineState.pipeline.filter(n => !(pipelineState.stages[n]?.enabled ?? true));
+  await fetch(`${API}/api/profiles/${encodeURIComponent(name)}`, {
+    method: 'POST', headers: {'Content-Type': 'application/json'},
+    body: JSON.stringify({ disable, workers: {} })
+  });
+  await loadPipeline();
+}
+
+async function duplicateProfile() {
+  const src = pipelineState.active_profile;
+  const name = prompt('New profile name (copy of ' + src + '):', src + '-copy');
+  if (!name) return;
+  const profile = pipelineState.profiles[src] || { disable: [], workers: {} };
+  await fetch(`${API}/api/profiles/${encodeURIComponent(name)}`, {
+    method: 'POST', headers: {'Content-Type': 'application/json'},
+    body: JSON.stringify(profile)
+  });
+  await loadPipeline();
+}
+
+async function exportProfile() {
+  const name = pipelineState.active_profile;
+  const res = await fetch(`${API}/api/profiles/${encodeURIComponent(name)}/export`);
+  const data = await res.json();
+  const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = `${name}.profile.json`;
+  a.click();
+}
+
+async function importProfile(evt) {
+  const file = evt.target.files[0];
+  if (!file) return;
+  const text = await file.text();
+  let data;
+  try { data = JSON.parse(text); } catch { return alert('Invalid JSON'); }
+  const name = data.name || file.name.replace(/\.json$/, '');
+  const profile = data.profile || data;
+  await fetch(`${API}/api/profiles/import`, {
+    method: 'POST', headers: {'Content-Type': 'application/json'},
+    body: JSON.stringify({ name, profile })
+  });
+  await loadPipeline();
+  evt.target.value = '';
+}
+</script>
+</body>
+</html>
